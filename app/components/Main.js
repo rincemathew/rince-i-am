@@ -1,6 +1,8 @@
 "use client"
 import addData from "../firebase/firestore/addData";
 import React, { useEffect, useState } from 'react'
+import { getDoc, doc, updateDoc } from "firebase/firestore"; // Add these Firebase imports
+import { db } from "../firebase/config"; // Ensure you have a properly exported Firestore
 
 function Main() {
 
@@ -30,28 +32,48 @@ function Main() {
     console.log("UserName added successfully", result);
   }
 
+  useEffect(()=>{
+    const timeStamp = Date.now().toString()
+    // const detailedDevice = navigator.userAgentData
+    const detailedDevice = navigator.userAgentData
+      ? {
+          brands: navigator.userAgentData.brands,
+          mobile: navigator.userAgentData.mobile,
+          platform: navigator.userAgentData.platform
+        }
+      : navigator.userAgent; 
+    pushToDetails({timeStamp, detailedDevice})
+  },[])
+
 
   // Push new item to details array
+  const pushToDetails = async (param) => {
+    try {
+      const userDocRef = doc(db, "users", userName);
+      console.log(db,"users",userName,+"aaaaa")
+      const userDoc = await getDoc(userDocRef);
+      console.log(JSON.stringify(userDoc.data().details,null,2)+"bbbbbbbbbbbbbbbb")
 
-  //handle form
-  // const handleForm = async () => {
-  //   const data = {
-  //     name: "Rinc",
-  //     house: "ma",
-  //   };
-  //   const { result, error } = await addData("users", "user-id", data);
+      if (userDoc.exists()) {
+        const currentDetails = userDoc.data().details || [];
+        const newItem = param; // Example new item
+        const updatedDetails = [...currentDetails, newItem];
+        console.log(updatedDetails)
 
-  //   if (error) {
-  //     return console.log("Error adding data:", error);
-  //   }
-
-  //   console.log("Data added successfully:", result);
-  // };
+        await updateDoc(userDocRef, { details: updatedDetails });
+        console.log("Details updated successfully:", updatedDetails);
+      } else {
+        console.log("User document does not exist!");
+      }
+    } catch (error) {
+      console.log("Error updating details:", error);
+    }
+  };
 
   return (
     <>
       <div>main dev</div>
-      <button onClick={handleForm}>Add Data</button>
+      {/* <button onClick={handleForm}>Add Data</button> */}
     </>
   );
 }
